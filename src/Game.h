@@ -13,13 +13,16 @@
 #include <Player.h>
 #include <PropertyHolder.h>
 #include <Commands.h>
+#include "SDLApp.h"
+#include <vector>
 ////////////////////////////////////////////////////////////////////////////////
 class IRenderer;
 class Room;
 typedef std::map<std::string, Room *> Rooms;
 ////////////////////////////////////////////////////////////////////////////////
-class Game : public PropertyHolder,
-	     public CommandHandler
+class Game :	public PropertyHolder,
+				public CommandHandler,
+				public SDLApp
 {
 private:
   Rooms       m_Rooms;
@@ -27,6 +30,9 @@ private:
   Player      m_Player;
   std::string m_Story;
   static Game *m_pInstance;
+  std::vector<SDL_Texture *> m_Textures;
+  std::vector<SDL_Rect *> m_srcRects;
+  std::vector<SDL_Rect *> m_dstRects;
   Game();
   virtual ~Game();
 public:
@@ -44,6 +50,7 @@ public:
   static std::string Trim( const std::string & str );
   Player & GetPlayer();
   Rooms &  GetRooms();
+  void MovePlayer(Direction d);
   
   void Execute( UseCommand & cmd );
   void Execute( ExamineCommand & cmd);

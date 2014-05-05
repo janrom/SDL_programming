@@ -19,5 +19,6 @@ MAKE_EXCEPTION_TYPE(DuplicateRoomIdException);
 MAKE_EXCEPTION_TYPE(UseCommandFailOnPlayerException);
 MAKE_EXCEPTION_TYPE(ExamineCommandFailOnPlayerException);
 enum Direction { North, South, East, West, kNumDirs };
+enum Textures { indexBackground, indexPlayer };
 
 #endif

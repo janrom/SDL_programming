@@ -54,14 +54,17 @@ set( PROJECT_SRC
   src/Logger.cpp
   src/Commands.cpp
   src/Commands.h
+  src/SDLApp.h
+  src/SDLApp.cpp
 )
 
 find_package(TinyXML2 REQUIRED)
 find_package(Boost COMPONENTS regex REQUIRED)
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 #find_package(SDL2_mixer REQUIRED)
 #find_package(SDL2_ttf REQUIRED)
-#find_package(SDL2_image REQUIRED)
+
 
 # --------------------
 # Set libraries requires for this project.
@@ -88,5 +91,5 @@ add_executable( quickescape ${PROJECT_SRC})
 target_link_libraries (quickescape  ${LIBS})
 # --------------------------------------
 # dependencies
-#add_dependencies(quickescape copy_res)
-#add_dependencies(quickescape copy_dlls)
+add_dependencies(quickescape copy_res)
+add_dependencies(quickescape copy_dlls)

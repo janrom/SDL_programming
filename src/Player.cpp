@@ -8,6 +8,13 @@
 using namespace tinyxml2;
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
+Player::Player()
+{
+	SetHeight(0);
+	SetWidth(0);
+	SetX(0);
+	SetY(0);
+}
 void
 Player::Save( XMLPrinter & p )
 {

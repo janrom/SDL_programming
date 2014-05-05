@@ -144,6 +144,45 @@ CommandUtils::Parse( const std::string & input )
   return new NullCommand();
 }
 ////////////////////////////////////////////////////////////////////////////////
+
+Command *
+CommandUtils::Parse(const SDL_Event & event)
+{
+	Room *current = g_Game.GetCurrentRoom();
+	switch (event.type)
+	{
+	case SDL_QUIT:
+		SDL_Quit();
+		return new QuitCommand();
+		break;
+	case SDL_KEYDOWN:
+		switch (event.key.keysym.sym)
+		{
+		case SDLK_q: case SDLK_ESCAPE:
+			SDL_Quit();
+			return new QuitCommand();
+			break;			
+		case SDLK_w: case SDLK_UP:
+			g_Game.GetPlayer().DecreaseY();
+			return new MoveCommand(North, current, current->GetNextRoom(North));
+			break;
+		case SDLK_s: case SDLK_DOWN:
+			g_Game.GetPlayer().IncreaseY();
+			return new MoveCommand(South, current, current->GetNextRoom(North));
+			break;
+		case SDLK_a: case SDLK_LEFT:
+			g_Game.GetPlayer().DecreaseX();
+			return new MoveCommand(West, current, current->GetNextRoom(North));
+			break;
+		case SDLK_d: case SDLK_RIGHT:
+			g_Game.GetPlayer().IncreaseX();
+			return new MoveCommand(East, current, current->GetNextRoom(North));
+			break;
+		}
+	}
+	return new NullCommand();
+}
+////////////////////////////////////////////////////////////////////////////////
 void 
 UseCommand::Execute( CommandHandler & handler )
 { 

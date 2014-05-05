@@ -10,6 +10,7 @@
 #include <RoomFactory.h>
 #include <Logger.h>
 #include "SDL.h"
+#include "SDL_image.h"
 ////////////////////////////////////////////////////////////////////////////////
 using namespace std;
 using namespace tinyxml2;
@@ -22,19 +23,6 @@ Game * Game::m_pInstance = NULL;
 // own thread for user input
 int InputThread(void * data)
 {
-	Game * pGame = static_cast<Game*>(data);
-
-	while (pGame->GetProperty("running"))
-	{
-		cout << "> ";
-
-		string tmp;
-		getline(cin, tmp);
-
-		Command *pCmd = CommandUtils::Parse(tmp);
-		pCmd->Execute(*pGame);
-		delete pCmd;
-	}
 
 	return 0;
 }
@@ -74,16 +62,54 @@ Game::Game() : m_pCurrentRoom(NULL)
   g_DirStr[South] = "south";
   g_DirStr[West] = "west";
   g_DirStr[East] = "east";
+
+  // initialize graphics window
+  Init("Quick Escape", 640, 480);
+
+  // load game's backgound texture and add it to texture vector
+  SDL_Texture * textureBackground = IMG_LoadTexture(renderer, "res/pages.png");
+  m_Textures.push_back(textureBackground);
+  if (m_Textures[indexBackground] == NULL) throw runtime_error(IMG_GetError());
+  SDL_SetTextureBlendMode(m_Textures[indexBackground], SDL_BLENDMODE_BLEND);
+  SDL_SetTextureAlphaMod(m_Textures[indexBackground], 255);
+  // quick and dirty solution for handling the rects when rendering textures
+  m_srcRects.push_back(NULL);
+  m_dstRects.push_back(NULL);
+  
+  // load player character's texture and add it to texture vector
+  SDL_Texture * texturePlayer = IMG_LoadTexture(renderer, "res/player0.png");
+  m_Textures.push_back(texturePlayer);
+  if (m_Textures[indexPlayer] == NULL) throw runtime_error(IMG_GetError());
+  SDL_SetTextureBlendMode(m_Textures[indexPlayer], SDL_BLENDMODE_BLEND);
+  SDL_SetTextureAlphaMod(m_Textures[indexPlayer], 255);
+  
+  // get player's width and height and position on screen
+  int width = 0, height = 0;
+  SDL_QueryTexture(m_Textures[indexPlayer], NULL, NULL, &width, &height);
+  m_Player.SetWidth(width * 2);
+  m_Player.SetHeight(height * 2);
+  m_Player.SetX(640 / 2);
+  //m_Player.SetY(480 - m_Player.GetHeight() * 2);
+  m_Player.SetY(480 / 2);
+  // quick and dirty solution for handling the rects when rendering textures
+  m_srcRects.push_back(NULL);
+  m_dstRects.push_back(m_Player.GetRect());
 }
 ////////////////////////////////////////////////////////////////////////////////
 Game::~Game()
 {
-  
+	while (!m_Textures.empty())
+	{
+		SDL_DestroyTexture(m_Textures.back());
+		m_Textures.back() = NULL;
+		m_Textures.pop_back();
+	}
+
 }
 ////////////////////////////////////////////////////////////////////////////////
 void Game::Play()
 {
-  
+	
   LoadMap("res/dungeon0.xml");
   CommandUtils::Load("res/commands.xml");
   for( auto a : m_Rooms )
@@ -95,58 +121,53 @@ void Game::Play()
       throw NullKeyException(ss.str());
     }
   }
+  std::cout << m_Story << "\n";
 
-  cout << m_Story << "\n";
+  // load and show spash screen
+  SDL_Texture * texture = IMG_LoadTexture(renderer, "res/splash.bmp");
+  if (texture == NULL) throw runtime_error(IMG_GetError());
+  Render(texture);
+  // show splash screen for 2 seconds
+  SDL_Delay(2000);
 
-  // create SDL window
-  SDL_Window * window = SDL_CreateWindow(	"Quick Escape", 
-											SDL_WINDOWPOS_CENTERED,
-											SDL_WINDOWPOS_CENTERED,
-											640,
-											400,
-											SDL_WINDOW_SHOWN|SDL_WINDOW_OPENGL);
-  
-  // throw error if window was not created
-  if (window == NULL) throw runtime_error(SDL_GetError());
+  // free memory from texture
+  SDL_DestroyTexture(texture);
+  texture = NULL;
 
-  SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer = NULL) throw runtime_error(SDL_GetError());
+  // load and show book cover
+  texture = IMG_LoadTexture(renderer, "res/cover.png");
+  if (texture == NULL) throw runtime_error(IMG_GetError());
+  Render(texture);
+  // show book cover for 2 seconds
+  SDL_Delay(2000);
+  // clear the renderer from textures
+  SDL_RenderClear(renderer);
 
-    // load image
-  SDL_Surface * tmp = SDL_LoadBMP("res/splash.bmp");
-  if (tmp = NULL) throw runtime_error(SDL_GetError());
-
-  SDL_Texture * image = SDL_CreateTextureFromSurface(renderer, tmp);
-  if (image = NULL) throw runtime_error(SDL_GetError());
-  
-  // tmp is now useless so delete it
-  SDL_FreeSurface(tmp);
-  tmp = NULL;
-  
-  SDL_Thread * thread = SDL_CreateThread(InputThread, "InputThread", this);
-  if (thread == NULL) throw runtime_error(SDL_GetError());
-
+  // free memory from texture
+  SDL_DestroyTexture(texture);
+  texture = NULL;  
+     
+  /* MAIN LOOP *********************************************************************/
   while ( GetProperty("running") ) 
-  {
-	  // render the image
-	  SDL_RenderCopy(renderer, image, NULL, NULL);
-	  SDL_RenderPresent(renderer);
-
-    Room & room = *GetCurrentRoom();
+  {         
+	Render(m_Textures, m_srcRects, m_dstRects);
+	
+	Room & room = *GetCurrentRoom();
     bool visited;
     
     if ( (room.HasProperty("visited") == false) || 
 	 ((visited = room.GetProperty("visited")) == false) )
     {    
       room.SetProperty("visited", true);
-    }  
+    }
+	/*
+	std::cout << "> ";
+	string tmp;
+	getline(cin, tmp);
+	*/
+	HandleInput();	
   }  
   Save("res/dungeon0.xml");
-  
-  // destroy pointers
-  if (window) SDL_DestroyWindow(window);
-  if (image) SDL_DestroyTexture(image);
-  if (thread) SDL_WaitThread(thread, NULL);
 }
 ////////////////////////////////////////////////////////////////////////////////
 Room * 
@@ -536,4 +557,11 @@ Game::Execute( NullCommand & cmd )
   
 }
 ////////////////////////////////////////////////////////////////////////////////
+void
+Game::MovePlayer(Direction d)
+{
+	if (d == North)
+	{
 
+	}
+}
