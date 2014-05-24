@@ -152,32 +152,34 @@ CommandUtils::Parse(const SDL_Event & event)
 	switch (event.type)
 	{
 	case SDL_QUIT:
-		SDL_Quit();
 		return new QuitCommand();
 		break;
 	case SDL_KEYDOWN:
-		switch (event.key.keysym.sym)
+		// no repeated commands are allowed
+		if (!event.key.repeat)
 		{
-		case SDLK_q: case SDLK_ESCAPE:
-			SDL_Quit();
-			return new QuitCommand();
-			break;			
-		case SDLK_w: case SDLK_UP:
-			g_Game.GetPlayer().DecreaseY();
-			return new MoveCommand(North, current, current->GetNextRoom(North));
-			break;
-		case SDLK_s: case SDLK_DOWN:
-			g_Game.GetPlayer().IncreaseY();
-			return new MoveCommand(South, current, current->GetNextRoom(North));
-			break;
-		case SDLK_a: case SDLK_LEFT:
-			g_Game.GetPlayer().DecreaseX();
-			return new MoveCommand(West, current, current->GetNextRoom(North));
-			break;
-		case SDLK_d: case SDLK_RIGHT:
-			g_Game.GetPlayer().IncreaseX();
-			return new MoveCommand(East, current, current->GetNextRoom(North));
-			break;
+			switch (event.key.keysym.sym)
+			{		
+			case SDLK_ESCAPE:
+				return new QuitCommand();
+				break;
+			case SDLK_UP:
+			case SDLK_w:
+				return new MoveCommand(North, current, current->GetNextRoom(North));
+				break;
+			case SDLK_DOWN:
+			case SDLK_b:
+				return new MoveCommand(South, current, current->GetNextRoom(South));
+				break;
+			case SDLK_LEFT:
+			case SDLK_a:
+				return new MoveCommand(West, current, current->GetNextRoom(West));
+				break;
+			case SDLK_RIGHT:
+			case SDLK_d:
+				return new MoveCommand(East, current, current->GetNextRoom(East));
+				break;
+			}
 		}
 	}
 	return new NullCommand();

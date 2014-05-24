@@ -1,9 +1,8 @@
-#include "SDL.h"
 #include "SDLApp.h"
-#include "SDL_image.h"
-#include <stdexcept>
-#include <string>
 #include "Game.h"
+#include "Commands.h"
+#include "IntroScene.h"
+#include "GameScene.h"
 
 using namespace std;
 
@@ -15,6 +14,9 @@ SDLApp::SDLApp()
 	}
 	window = NULL;
 	renderer = NULL;	
+	currentScene = NULL;
+	
+	if (TTF_Init()) throw runtime_error(TTF_GetError());
 }
 
 SDLApp::~SDLApp()
@@ -38,28 +40,34 @@ SDLApp::Init(const std::string & title, int width, int height, int flags)
 	// throw error if window was not created
 	if (window == NULL) throw runtime_error(SDL_GetError());
 
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer = SDL_CreateRenderer(	window, -1, 
+									SDL_RENDERER_ACCELERATED |
+									SDL_RENDERER_TARGETTEXTURE );
+
 	if (renderer == NULL) throw runtime_error(SDL_GetError());	
+
+	time = SDL_GetTicks();
+
+	IntroScene * intro = new IntroScene();
+	intro->Init(renderer);
+	intro->SetName("Intro");
+	AddScene(intro);
+	SetCurrentScene(intro);
+
+	GameScene * game = new GameScene();
+	game->Init(renderer);
+	game->SetName("Game");
+	AddScene(game);
+
+	page = game->page;
 }
 
 void
-SDLApp::Render(SDL_Texture * texture)
+SDLApp::Render(SDL_Renderer * renderer)
 {
-	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	if (currentScene) currentScene->Render(renderer);
+	// draw all texture changes made in current scene
 	SDL_RenderPresent(renderer);
-}
-
-void 
-SDLApp::Render(std::vector<SDL_Texture *> & textures, std::vector<SDL_Rect *> & srcRects, std::vector<SDL_Rect *> & dstRects)
-{
-	// render images
-	int index = 0;
-	for (auto it = textures.begin(); it != textures.end(); it++)
-	{
-		SDL_RenderCopy(renderer, textures[index], srcRects[index], dstRects[index]);
-		index++;
-	}
-	SDL_RenderPresent(renderer);	
 }
 
 void
@@ -72,10 +80,97 @@ SDLApp::HandleInput()
 		{
 		case SDL_QUIT:
 		case SDL_KEYDOWN:
-			Command *pCmd = CommandUtils::Parse(ev);
-			pCmd->Execute(*Game::GetInstance());
-			delete pCmd;
+			currentScene->OnEvent(ev);			
 		break;				
 		}
 	}
+}
+
+void 
+SDLApp::AddScene(Scene * scene)
+{
+	if (scenes.find(scene->GetName()) != scenes.end())
+	{
+		ostringstream ss("The given name");
+		ss << scene->GetName() << "is already in use";
+		throw runtime_error(ss.str());
+	}
+	scenes[scene->GetName()] = scene;
+}
+
+void
+SDLApp::DeleteScene(Scene * scene)
+{
+	auto it = scenes.find(scene->GetName());
+	if (it != scenes.end())
+	{
+		delete it->second;
+		scenes.erase(it);
+	}
+	else
+	{
+		ostringstream ss("Cannot delete a scene. Scene with a given name ");
+		ss << scene->GetName() << " doesn't exists.";
+		throw runtime_error(ss.str());
+	}
+}
+
+void
+SDLApp::SetCurrentScene(Scene * scene)
+{
+	auto it = scenes.find(scene->GetName());
+	if (it != scenes.end())
+	{
+		currentScene = it->second;
+	}
+	else
+	{
+		ostringstream ss("Cannot set current scene. Scene with a given name ");
+		ss << scene->GetName() << " doesn't exists.";
+		throw runtime_error(ss.str());
+	}
+}
+
+Scene * 
+SDLApp::GetCurrentScene()
+{
+	return currentScene;
+}
+
+Scene *
+SDLApp::FindScene(string name)
+{
+	auto it = scenes.find(name);
+	if (it != scenes.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		ostringstream oss("Cannot find a scene with given name: ");
+		oss << name;
+		throw runtime_error(oss.str());
+	}
+}
+
+SDL_Window * 
+SDLApp::GetWindow()
+{
+	return window;
+}
+
+void
+SDLApp::Update()
+{
+	const int MIN_ALLOWED_TIME_STEP_MS = 5;
+	Uint32 slice = SDL_GetTicks() - time;
+	if (slice >= MIN_ALLOWED_TIME_STEP_MS)
+	{
+		if (currentScene)
+		{
+			float seconds = (float)slice * 0.001f;
+			currentScene->Update(seconds);
+			time = SDL_GetTicks();
+		}
+	}	
 }

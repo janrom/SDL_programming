@@ -1,5 +1,6 @@
 // Copyright anssi.grohn@karelia.fi (c) 2014.
 // Licensed under GPLv3.
+#pragma warning( disable : 4996 ) // disable Visual Studio warning for use of localtime instead of localtime_s
 #include <Logger.h>
 ////////////////////////////////////////////////////////////////////////////////
 Logger * Logger::logger = NULL;

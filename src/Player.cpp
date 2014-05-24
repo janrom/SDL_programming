@@ -10,10 +10,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 Player::Player()
 {
-	SetHeight(0);
-	SetWidth(0);
-	SetX(0);
-	SetY(0);
+	
 }
 void
 Player::Save( XMLPrinter & p )
@@ -44,11 +41,11 @@ Player::Execute( InventoryCommand & cmd )
   }
   else 
   {
-    // List player's items.
-    cout << "You have ";
-    std::list<string> items;
-    for(auto item : GetItems()) items.push_back(item->GetName());
-    cout << Game::MakeReadable(items) << "\n";
+	 // List player's items.
+	 *Game::GetInstance()->page << "You have ";
+	std::list<string> items;
+	for(auto item : GetItems()) items.push_back(item->GetName());
+	*Game::GetInstance()->page << Game::MakeReadable(items) << "\n";
   }
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +55,7 @@ Player::Execute( ExamineCommand & cmd )
   
   GameObject * item = GetItems()[cmd.m_strTarget];
   if ( !item ) throw ExamineCommandFailOnPlayerException("");
-  cout << "After taking a closer look, you see " << item->GetDescription() << ". ";
+  *Game::GetInstance()->page << "After taking a closer look, you see " << item->GetDescription() << ". ";
   
 }
 ////////////////////////////////////////////////////////////////////////////////

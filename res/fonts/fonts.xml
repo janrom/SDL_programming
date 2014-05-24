@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<Fonts>
+  <Font name="special" size="32" path="res/fonts/OLDSIH__.TTF" />
+  <Font name="text" size="34" path="res/fonts/OLDSH___.TTF" />
+  <Font name="title" size="36" path="res/fonts/OLDSSCH_.TTF" />
+</Fonts>

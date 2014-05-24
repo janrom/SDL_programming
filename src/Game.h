@@ -13,26 +13,26 @@
 #include <Player.h>
 #include <PropertyHolder.h>
 #include <Commands.h>
-#include "SDLApp.h"
 #include <vector>
+#include "SDLApp.h"
+#include "Page.h"
 ////////////////////////////////////////////////////////////////////////////////
 class IRenderer;
 class Room;
 typedef std::map<std::string, Room *> Rooms;
 ////////////////////////////////////////////////////////////////////////////////
-class Game :	public PropertyHolder,
-				public CommandHandler,
+class Game :	public PropertyHolder,				
 				public SDLApp
 {
 private:
-  Rooms       m_Rooms;
-  Room *      m_pCurrentRoom;
-  Player      m_Player;
-  std::string m_Story;
-  static Game *m_pInstance;
+  Rooms			m_Rooms;
+  Room *		m_pCurrentRoom;
+  Player		m_Player;
+  std::string	m_Story;
+  static Game	*m_pInstance;
   std::vector<SDL_Texture *> m_Textures;
   std::vector<SDL_Rect *> m_srcRects;
-  std::vector<SDL_Rect *> m_dstRects;
+  std::vector<SDL_Rect *> m_dstRects;  
   Game();
   virtual ~Game();
 public:
@@ -50,18 +50,8 @@ public:
   static std::string Trim( const std::string & str );
   Player & GetPlayer();
   Rooms &  GetRooms();
-  void MovePlayer(Direction d);
+  void MovePlayer(Direction d); 
   
-  void Execute( UseCommand & cmd );
-  void Execute( ExamineCommand & cmd);
-  void Execute( QuitCommand & cmd);
-  void Execute( MoveCommand & cmd);
-  void Execute( UnknownCommand & cmd);
-  void Execute( TakeCommand & cmd);
-  void Execute( DropCommand & cmd);
-  void Execute( InventoryCommand & cmd);
-  void Execute( LookCommand & cmd);
-  void Execute( NullCommand & cmd);
 };
 ////////////////////////////////////////////////////////////////////////////////
 #endif

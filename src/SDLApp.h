@@ -1,26 +1,45 @@
 #ifndef __SDLApp_h__
 #define __SDLApp_h__
 
-#include "SDL.h"
-#include "Command.h"
 #include <string>
 #include <vector>
+#include <map>
+#include <stdexcept>
+#include <sstream>
+#include "SDL.h"
+#include "SDL_image.h"
+#include "Scene.h"
+#include "Page.h"
 
 class SDLApp
 {
 protected:
-	SDL_Window * window;
-	SDL_Renderer * renderer;		
+	SDL_Window *	window;
+	SDL_Renderer *	renderer;
+	Scene *			currentScene;	
+	Uint32			time;
+	std::map<std::string, Scene *> scenes;
 public:
+	Page *	page;
 	SDLApp();
-	virtual ~SDLApp();
+	virtual ~SDLApp();	
 	void Init(const std::string & title,
 		int width,
 		int height,
 		int flags = SDL_WINDOW_SHOWN);
-	void Render(SDL_Texture * texture);
-	void Render(std::vector<SDL_Texture *> & textures, std::vector<SDL_Rect *> & srcRects, std::vector<SDL_Rect *> & dstRects);
+	// TODO: move texture handling away from Game-class
+	void Render(SDL_Renderer * renderer);
+	void Update();
 	void HandleInput();	
+
+	// for Scene-class handling
+	void AddScene(Scene * scene);
+	void DeleteScene(Scene * scene);
+	void SetCurrentScene(Scene * scene);
+	Scene * GetCurrentScene();
+	Scene * FindScene( std::string name );
+
+	SDL_Window * GetWindow();
 };
 
 #endif

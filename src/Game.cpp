@@ -1,5 +1,8 @@
 // Copyright anssi.grohn@karelia.fi (c) 2014.
 // Licensed under GPLv3.
+
+#pragma warning( disable : 4996 ) // disable Visual Studio warning for use of fopen_s instead of fopen
+#pragma warning( disable : 4101 ) // disable Visual Studio warning for use 'ex' : unreferenced local variable
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -64,36 +67,7 @@ Game::Game() : m_pCurrentRoom(NULL)
   g_DirStr[East] = "east";
 
   // initialize graphics window
-  Init("Quick Escape", 640, 480);
-
-  // load game's backgound texture and add it to texture vector
-  SDL_Texture * textureBackground = IMG_LoadTexture(renderer, "res/pages.png");
-  m_Textures.push_back(textureBackground);
-  if (m_Textures[indexBackground] == NULL) throw runtime_error(IMG_GetError());
-  SDL_SetTextureBlendMode(m_Textures[indexBackground], SDL_BLENDMODE_BLEND);
-  SDL_SetTextureAlphaMod(m_Textures[indexBackground], 255);
-  // quick and dirty solution for handling the rects when rendering textures
-  m_srcRects.push_back(NULL);
-  m_dstRects.push_back(NULL);
-  
-  // load player character's texture and add it to texture vector
-  SDL_Texture * texturePlayer = IMG_LoadTexture(renderer, "res/player0.png");
-  m_Textures.push_back(texturePlayer);
-  if (m_Textures[indexPlayer] == NULL) throw runtime_error(IMG_GetError());
-  SDL_SetTextureBlendMode(m_Textures[indexPlayer], SDL_BLENDMODE_BLEND);
-  SDL_SetTextureAlphaMod(m_Textures[indexPlayer], 255);
-  
-  // get player's width and height and position on screen
-  int width = 0, height = 0;
-  SDL_QueryTexture(m_Textures[indexPlayer], NULL, NULL, &width, &height);
-  m_Player.SetWidth(width * 2);
-  m_Player.SetHeight(height * 2);
-  m_Player.SetX(640 / 2);
-  //m_Player.SetY(480 - m_Player.GetHeight() * 2);
-  m_Player.SetY(480 / 2);
-  // quick and dirty solution for handling the rects when rendering textures
-  m_srcRects.push_back(NULL);
-  m_dstRects.push_back(m_Player.GetRect());
+  Init("Quick Escape", 640, 480);  
 }
 ////////////////////////////////////////////////////////////////////////////////
 Game::~Game()
@@ -122,35 +96,13 @@ void Game::Play()
     }
   }
   std::cout << m_Story << "\n";
-
-  // load and show spash screen
-  SDL_Texture * texture = IMG_LoadTexture(renderer, "res/splash.bmp");
-  if (texture == NULL) throw runtime_error(IMG_GetError());
-  Render(texture);
-  // show splash screen for 2 seconds
-  SDL_Delay(2000);
-
-  // free memory from texture
-  SDL_DestroyTexture(texture);
-  texture = NULL;
-
-  // load and show book cover
-  texture = IMG_LoadTexture(renderer, "res/cover.png");
-  if (texture == NULL) throw runtime_error(IMG_GetError());
-  Render(texture);
-  // show book cover for 2 seconds
-  SDL_Delay(2000);
-  // clear the renderer from textures
-  SDL_RenderClear(renderer);
-
-  // free memory from texture
-  SDL_DestroyTexture(texture);
-  texture = NULL;  
-     
+       
   /* MAIN LOOP *********************************************************************/
   while ( GetProperty("running") ) 
-  {         
-	Render(m_Textures, m_srcRects, m_dstRects);
+  { 
+	  HandleInput();
+	  Update();
+	  Render(renderer);
 	
 	Room & room = *GetCurrentRoom();
     bool visited;
@@ -160,13 +112,7 @@ void Game::Play()
     {    
       room.SetProperty("visited", true);
     }
-	/*
-	std::cout << "> ";
-	string tmp;
-	getline(cin, tmp);
-	*/
-	HandleInput();	
-  }  
+   }  
   Save("res/dungeon0.xml");
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,100 +407,6 @@ Rooms &
 Game::GetRooms()
 {
   return m_Rooms;
-}
-////////////////////////////////////////////////////////////////////////////////
-void 
-Game::Execute(QuitCommand & cmd)
-{
-  SetProperty("running", false);
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute(MoveCommand & cmd)
-{
-  if ( cmd.m_Dir == kNumDirs )
-  {
-    cout << "You want to move ... where?\n";
-  } 
-  else 
-  {
-    Room *pNext = GetCurrentRoom()->GetNextRoom(cmd.m_Dir);
-    if ( pNext ) 
-    {
-      // Handle move commands in both rooms
-      GetCurrentRoom()->Execute(cmd);
-      SetCurrentRoom(pNext);
-      GetCurrentRoom()->Execute(cmd);
-    }
-    else
-    {
-      cout << "You bump your head on the wall. You can't go that way.\n";
-    }
-  }
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( UnknownCommand & cmd)
-{
-  cout << "Sorry, I did not quite get that.\n";
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( TakeCommand & cmd )
-{
-  GetCurrentRoom()->Execute(cmd);
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( DropCommand & cmd)
-{
-  GetCurrentRoom()->Execute(cmd);
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( InventoryCommand & cmd)
-{
-  m_Player.Execute(cmd);
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( LookCommand & cmd )
-{
-  GetCurrentRoom()->Execute(cmd);
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( ExamineCommand & cmd )
-{
-  try 
-  {
-    m_Player.Execute(cmd);
-  } 
-  catch ( ExamineCommandFailOnPlayerException & ex )
-  {
-    GetCurrentRoom()->Execute(cmd);
-  }
-
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( UseCommand & cmd )
-{
-  // try player's inventory use first
-  try {
-    m_Player.Execute(cmd);
-  } 
-  catch( UseCommandFailOnPlayerException & ex )
-  {
-    // no go, try from room instead.
-    GetCurrentRoom()->Execute(cmd);
-  }
-}
-////////////////////////////////////////////////////////////////////////////////
-void
-Game::Execute( NullCommand & cmd )
-{
-  
 }
 ////////////////////////////////////////////////////////////////////////////////
 void

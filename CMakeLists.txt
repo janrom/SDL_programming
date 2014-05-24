@@ -24,7 +24,7 @@ if(WIN32)
   # its version does not match exactly the version of visual studio 
   # you are generating build files for.
   
-  set( BOOST_LIBRARYDIR "D:/boost_1_55_0/lib64-msvc-12.0")
+  set( BOOST_LIBRARYDIR "D:/boost_1_55_0/lib32-msvc-12.0")
     
 endif()
 
@@ -56,21 +56,38 @@ set( PROJECT_SRC
   src/Commands.h
   src/SDLApp.h
   src/SDLApp.cpp
+  src/Scene.h
+  src/Scene.cpp
+  src/IntroScene.h
+  src/IntroScene.cpp
+  src/GameScene.h
+  src/GameScene.cpp
+  src/Page.h
+  src/Page.cpp
 )
 
 find_package(TinyXML2 REQUIRED)
 find_package(Boost COMPONENTS regex REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
-#find_package(SDL2_mixer REQUIRED)
-#find_package(SDL2_ttf REQUIRED)
-
+find_package(SDL2_ttf REQUIRED)
+find_package(SDL2_gfx REQUIRED)
 
 # --------------------
 # Set libraries requires for this project.
-set( LIBS ${TINYXML2_LIBRARY} ${Boost_LIBRARIES} ${SDL2_LIBRARY})
+set( LIBS	${TINYXML2_LIBRARY} 
+			${Boost_LIBRARIES} 
+			${SDL2_LIBRARY} 
+			${SDL2_IMAGE_LIBRARY}	
+			${SDL2_TTF_LIBRARY}
+			${SDL2GFX_LIBRARY}	)
 
-include_directories(${TINYXML2_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${SDL2_INCLUDE_DIR})
+include_directories(	${TINYXML2_INCLUDE_DIR} 
+						${Boost_INCLUDE_DIR} 
+						${SDL2_INCLUDE_DIR} 
+						${SDL2_IMAGE_INCLUDE_DIR}	
+						${SDL2_TTF_INCLUDE_DIR}
+						${SDL2GFX_INCLUDE_DIR}	)
 # --------------------
 # Resource copying target
 add_custom_target(copy_res)
@@ -78,12 +95,12 @@ add_custom_command( TARGET copy_res PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_SOURCE_DIR}/res ${CMAKE_CURRENT_BINARY_DIR}/res)
   
-# copy whole lib-folder content to build's Debug-folder
+# copy dlls to Debug-folder
 add_custom_target ( copy_dlls )
 add_custom_command (	TARGET copy_dlls POST_BUILD
 						COMMAND ${CMAKE_COMMAND} -E	copy_directory
 						${CMAKE_SOURCE_DIR}/deps/lib ${CMAKE_BINARY_DIR}/Debug
-					)					
+					)
 
 # --------------------------------------
 # Executable to be built

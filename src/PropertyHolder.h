@@ -2,6 +2,7 @@
 // Licensed under GPLv3.
 #ifndef __PropertyHolder_h__
 #define __PropertyHolder_h__
+#pragma warning( disable : 4290 ) // disable Visual Studio warning for use of throw in forward declaration
 ////////////////////////////////////////////////////////////////////////////////
 #include <string>
 #include <globals.h>
