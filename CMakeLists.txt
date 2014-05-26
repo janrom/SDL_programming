@@ -72,6 +72,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_gfx REQUIRED)
+find_package(SDL2_mixer REQUIRED)
 
 # --------------------
 # Set libraries requires for this project.
@@ -80,14 +81,16 @@ set( LIBS	${TINYXML2_LIBRARY}
 			${SDL2_LIBRARY} 
 			${SDL2_IMAGE_LIBRARY}	
 			${SDL2_TTF_LIBRARY}
-			${SDL2GFX_LIBRARY}	)
+			${SDL2GFX_LIBRARY}	
+			${SDL2_MIXER_LIBRARY}	)
 
 include_directories(	${TINYXML2_INCLUDE_DIR} 
 						${Boost_INCLUDE_DIR} 
 						${SDL2_INCLUDE_DIR} 
 						${SDL2_IMAGE_INCLUDE_DIR}	
 						${SDL2_TTF_INCLUDE_DIR}
-						${SDL2GFX_INCLUDE_DIR}	)
+						${SDL2GFX_INCLUDE_DIR}
+						${SDL2_MIXER_INCLUDE_DIR}	)
 # --------------------
 # Resource copying target
 add_custom_target(copy_res)

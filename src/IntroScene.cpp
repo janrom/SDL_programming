@@ -48,9 +48,23 @@ IntroScene::OnEvent(SDL_Event & ev)
 	{
 	case SDL_QUIT:
 		Game::GetInstance()->SetProperty("running", false);
+		Mix_FadeOutMusic(3000);
+		SDL_Delay(3500);
 		break;
 	case SDL_KEYDOWN:
 		fading = true;
 		break;
 	}
+}
+
+void
+IntroScene::OnEnter()
+{
+	Mix_FadeInMusic(Game::GetInstance()->music["background"], -1, 3000);
+}
+
+void
+IntroScene::OnExit()
+{
+
 }

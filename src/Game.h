@@ -30,9 +30,10 @@ private:
   Player		m_Player;
   std::string	m_Story;
   static Game	*m_pInstance;
+  bool			running; // needed for compiling with visual studio
   std::vector<SDL_Texture *> m_Textures;
   std::vector<SDL_Rect *> m_srcRects;
-  std::vector<SDL_Rect *> m_dstRects;  
+  std::vector<SDL_Rect *> m_dstRects;    
   Game();
   virtual ~Game();
 public:

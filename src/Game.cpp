@@ -14,6 +14,7 @@
 #include <Logger.h>
 #include "SDL.h"
 #include "SDL_image.h"
+#include "SDL_mixer.h"
 ////////////////////////////////////////////////////////////////////////////////
 using namespace std;
 using namespace tinyxml2;
@@ -23,18 +24,12 @@ map<XMLError,string> g_TinyXmlErrors;
 map<Direction,string> g_DirStr;
 Game * Game::m_pInstance = NULL;
 
-// own thread for user input
-int InputThread(void * data)
-{
-
-	return 0;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 Game::Game() : m_pCurrentRoom(NULL)
 {
   Logger::GetInstance().open("log.txt");
   SetProperty("running", true);
+  running = true;
   g_Log << "Start";
 
   g_Opposite[North] = South;
@@ -65,9 +60,7 @@ Game::Game() : m_pCurrentRoom(NULL)
   g_DirStr[South] = "south";
   g_DirStr[West] = "west";
   g_DirStr[East] = "east";
-
-  // initialize graphics window
-  Init("Quick Escape", 640, 480);  
+   
 }
 ////////////////////////////////////////////////////////////////////////////////
 Game::~Game()
@@ -83,7 +76,8 @@ Game::~Game()
 ////////////////////////////////////////////////////////////////////////////////
 void Game::Play()
 {
-	
+	// initialize graphics window
+	Init("Quick Escape", 640, 480);
   LoadMap("res/dungeon0.xml");
   CommandUtils::Load("res/commands.xml");
   for( auto a : m_Rooms )
@@ -98,22 +92,25 @@ void Game::Play()
   std::cout << m_Story << "\n";
        
   /* MAIN LOOP *********************************************************************/
-  while ( GetProperty("running") ) 
+  int playingMusic = 0;
+  while ( running || (playingMusic == 1) || (Mix_Playing(-1) > 0))
   { 
 	  HandleInput();
 	  Update();
 	  Render(renderer);
-	
-	Room & room = *GetCurrentRoom();
-    bool visited;
+
+	  Room & room = *GetCurrentRoom();
+	  bool visited;
     
-    if ( (room.HasProperty("visited") == false) || 
-	 ((visited = room.GetProperty("visited")) == false) )
-    {    
-      room.SetProperty("visited", true);
-    }
+	  if ( (room.HasProperty("visited") == false) || 
+		  ((visited = room.GetProperty("visited")) == false) )
+	  {
+		  room.SetProperty("visited", true);
+	  }
+	  playingMusic = Mix_PlayingMusic();
+	  running = GetProperty("running");
    }  
-  Save("res/dungeon0.xml");
+	Save("res/dungeon0.xml");
 }
 ////////////////////////////////////////////////////////////////////////////////
 Room * 

@@ -45,3 +45,15 @@ Scene::OnEvent(SDL_Event & ev)
 {
 
 }
+
+void
+Scene::OnEnter()
+{
+
+}
+
+void
+Scene::OnExit()
+{
+
+}

@@ -3,9 +3,9 @@
 #include "Commands.h"
 #include "IntroScene.h"
 #include "GameScene.h"
-
+////////////////////////////////////////////////////////////////////////////////////////////
 using namespace std;
-
+////////////////////////////////////////////////////////////////////////////////////////////
 SDLApp::SDLApp()
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
@@ -17,15 +17,56 @@ SDLApp::SDLApp()
 	currentScene = NULL;
 	
 	if (TTF_Init()) throw runtime_error(TTF_GetError());
-}
 
+	// initialize mixer settings
+	int mixerFlags = MIX_INIT_MP3;
+	int returnedFlags = Mix_Init(mixerFlags);
+	if ((mixerFlags & returnedFlags) != mixerFlags)
+	{
+		throw runtime_error(Mix_GetError());
+	}
+
+	int freq = 44100;
+	Uint16 format = AUDIO_S16SYS;
+	int channels = 2;
+	int buffer = 1024;
+
+	if (Mix_OpenAudio(freq, format, channels, buffer))
+	{
+		throw runtime_error(Mix_GetError());
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
 SDLApp::~SDLApp()
 {
-	SDL_DestroyWindow(window);
-	SDL_DestroyRenderer(renderer);
+
+	if (window) SDL_DestroyWindow(window);
+	if (renderer) SDL_DestroyRenderer(renderer);
+
+	for (auto & it : scenes)
+	{
+		delete it.second;
+	}
+
+	for (auto & it : music)
+	{
+		Mix_FreeMusic(it.second);
+	}
+	music.clear();
+
+	for (auto & it : sounds)
+	{
+		Mix_FreeChunk(it.second);
+	}
+	sounds.clear();
+	
+	Mix_CloseAudio();
+	Mix_Quit();
+	TTF_Quit();
+	IMG_Quit();
 	SDL_Quit();	
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void 
 SDLApp::Init(const std::string & title, int width, int height, int flags)
 {
@@ -46,22 +87,45 @@ SDLApp::Init(const std::string & title, int width, int height, int flags)
 
 	if (renderer == NULL) throw runtime_error(SDL_GetError());	
 
-	time = SDL_GetTicks();
+	Mix_Music * song = Mix_LoadMUS("res/audio/background.mp3");
+	if (song == NULL)
+	{
+		throw runtime_error(Mix_GetError());
+	}
+	music["background"] = song;
 
+	Mix_Chunk * tmp = Mix_LoadWAV("res/audio/step.wav");
+	if (tmp == NULL) throw runtime_error(Mix_GetError());
+	sounds["step"] = tmp;
+
+	tmp = Mix_LoadWAV("res/audio/blocked.wav");
+	if (tmp == NULL) throw runtime_error(Mix_GetError());
+	sounds["blocked"] = tmp;
+
+	tmp = Mix_LoadWAV("res/audio/death.wav");
+	if (tmp == NULL) throw runtime_error(Mix_GetError());
+	sounds["death"] = tmp;
+
+	tmp = Mix_LoadWAV("res/audio/squish.wav");
+	if (tmp == NULL) throw runtime_error(Mix_GetError());
+	sounds["squish"] = tmp;
+		
 	IntroScene * intro = new IntroScene();
 	intro->Init(renderer);
 	intro->SetName("Intro");
 	AddScene(intro);
-	SetCurrentScene(intro);
-
+	
 	GameScene * game = new GameScene();
 	game->Init(renderer);
 	game->SetName("Game");
 	AddScene(game);
-
+		
+	SetCurrentScene(intro);
 	page = game->page;
+	time = SDL_GetTicks();
+	
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 SDLApp::Render(SDL_Renderer * renderer)
 {
@@ -69,7 +133,7 @@ SDLApp::Render(SDL_Renderer * renderer)
 	// draw all texture changes made in current scene
 	SDL_RenderPresent(renderer);
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 SDLApp::HandleInput()
 {
@@ -85,7 +149,7 @@ SDLApp::HandleInput()
 		}
 	}
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void 
 SDLApp::AddScene(Scene * scene)
 {
@@ -97,7 +161,7 @@ SDLApp::AddScene(Scene * scene)
 	}
 	scenes[scene->GetName()] = scene;
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 SDLApp::DeleteScene(Scene * scene)
 {
@@ -114,14 +178,21 @@ SDLApp::DeleteScene(Scene * scene)
 		throw runtime_error(ss.str());
 	}
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 SDLApp::SetCurrentScene(Scene * scene)
 {
 	auto it = scenes.find(scene->GetName());
 	if (it != scenes.end())
 	{
+		// call exit from previous scene
+		if (currentScene != NULL)
+			currentScene->OnExit();
+
+		// change to new scene
 		currentScene = it->second;
+		// call enter for new scene
+		currentScene->OnEnter();
 	}
 	else
 	{
@@ -130,13 +201,13 @@ SDLApp::SetCurrentScene(Scene * scene)
 		throw runtime_error(ss.str());
 	}
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 Scene * 
 SDLApp::GetCurrentScene()
 {
 	return currentScene;
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 Scene *
 SDLApp::FindScene(string name)
 {
@@ -152,13 +223,13 @@ SDLApp::FindScene(string name)
 		throw runtime_error(oss.str());
 	}
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 SDL_Window * 
 SDLApp::GetWindow()
 {
 	return window;
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 SDLApp::Update()
 {

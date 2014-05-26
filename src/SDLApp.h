@@ -8,6 +8,7 @@
 #include <sstream>
 #include "SDL.h"
 #include "SDL_image.h"
+#include "SDL_mixer.h"
 #include "Scene.h"
 #include "Page.h"
 
@@ -20,6 +21,8 @@ protected:
 	Uint32			time;
 	std::map<std::string, Scene *> scenes;
 public:
+	std::map<std::string, Mix_Music *> music;
+	std::map<std::string, Mix_Chunk *> sounds;
 	Page *	page;
 	SDLApp();
 	virtual ~SDLApp();	
@@ -39,7 +42,7 @@ public:
 	Scene * GetCurrentScene();
 	Scene * FindScene( std::string name );
 
-	SDL_Window * GetWindow();
+	SDL_Window * GetWindow();	
 };
 
 #endif

@@ -8,11 +8,11 @@
 #include <sstream>
 #include "globals.h"
 #include "Room.h"
-
+////////////////////////////////////////////////////////////////////////////////////////////
 using namespace std;
 using namespace tinyxml2;
 extern map<XMLError, string> g_TinyXmlErrors;
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 GameScene::Init(SDL_Renderer * renderer)
 {
@@ -85,14 +85,14 @@ GameScene::Init(SDL_Renderer * renderer)
 		pElement = pElement->NextSiblingElement("Font");
 	}
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 GameScene::~GameScene()
 {
 	SDL_DestroyTexture(bookCover);
 	SDL_DestroyTexture(bookPages);
 	SDL_DestroyTexture(playerTexture);	
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////
 void
 GameScene::Render(SDL_Renderer * renderer)
 {
@@ -151,10 +151,24 @@ GameScene::OnEvent(SDL_Event & ev)
 	delete pCmd;	
 }
 ////////////////////////////////////////////////////////////////////////////////
+void 
+GameScene::OnEnter()
+{
+
+}
+////////////////////////////////////////////////////////////////////////////////
+void
+GameScene::OnExit()
+{
+
+}
+////////////////////////////////////////////////////////////////////////////////
 void
 GameScene::Execute(QuitCommand & cmd)
 {
 	Game::GetInstance()->SetProperty("running", false);
+	Mix_FadeOutMusic(3000);
+	SDL_Delay(3500);
 	SDL_Quit();
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -164,6 +178,7 @@ GameScene::Execute(MoveCommand & cmd)
 	if (cmd.m_Dir == kNumDirs)
 	{
 		*page << "You want to move ... where?\n";
+		page->SetDirty(true);
 	}
 	else
 	{
@@ -190,10 +205,15 @@ GameScene::Execute(MoveCommand & cmd)
 				playerRect.x -= playerRect.w;
 				break;
 			}
+			// play sound sample
+			Mix_PlayChannel(-1, Game::GetInstance()->sounds["step"], 0);
 		}
 		else
 		{
 			*page << "You bump your head on the wall. You can't go that way.\n";
+			page->SetDirty(true);
+			// play sound sample
+			Mix_PlayChannel(-1, Game::GetInstance()->sounds["blocked"], 0);
 		}
 	}
 	page->SetDirty(true);
@@ -203,6 +223,7 @@ void
 GameScene::Execute(UnknownCommand & cmd)
 {
 	*page << "Sorry, I did not quite get that.\n";
+	page->SetDirty(true);
 }
 ////////////////////////////////////////////////////////////////////////////////
 void

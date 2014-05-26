@@ -16,7 +16,11 @@ Stairway::Execute( MoveCommand & cmd )
   {
     // Report death message attached to room
     cout << GetProperty("deathmessage").As<string>() <<  "\n";
+	Mix_PlayChannel(-1, Game::GetInstance()->sounds["death"], 0);
+	SDL_Delay(1000);
+	Mix_PlayChannel(-1, Game::GetInstance()->sounds["squish"], 0);
     g_Game.SetProperty("running", false);
+	Mix_FadeOutMusic(3000);
   }
   else
   {

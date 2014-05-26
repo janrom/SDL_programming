@@ -29,6 +29,8 @@ public:
 	virtual void Update(float seconds);
 	virtual void Render(SDL_Renderer * renderer);	
 	virtual void OnEvent(SDL_Event & ev);
+	virtual void OnEnter();
+	virtual void OnExit();
 
 	void Execute(UseCommand & cmd);
 	void Execute(ExamineCommand & cmd);
