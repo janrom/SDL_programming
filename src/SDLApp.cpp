@@ -87,12 +87,13 @@ SDLApp::Init(const std::string & title, int width, int height, int flags)
 
 	if (renderer == NULL) throw runtime_error(SDL_GetError());	
 
-	Mix_Music * song = Mix_LoadMUS("res/audio/background.mp3");
-	if (song == NULL)
-	{
-		throw runtime_error(Mix_GetError());
-	}
-	music["background"] = song;
+	Mix_Music * musTmp = Mix_LoadMUS("res/audio/background.mp3");
+	if (musTmp == NULL) throw runtime_error(Mix_GetError());
+	music["background"] = musTmp;
+
+	musTmp = Mix_LoadMUS("res/audio/page-flip-12.mp3");
+	if (musTmp == NULL) throw runtime_error(Mix_GetError());
+	music["page"] = musTmp;	
 
 	Mix_Chunk * tmp = Mix_LoadWAV("res/audio/step.wav");
 	if (tmp == NULL) throw runtime_error(Mix_GetError());
@@ -109,7 +110,7 @@ SDLApp::Init(const std::string & title, int width, int height, int flags)
 	tmp = Mix_LoadWAV("res/audio/squish.wav");
 	if (tmp == NULL) throw runtime_error(Mix_GetError());
 	sounds["squish"] = tmp;
-		
+			
 	IntroScene * intro = new IntroScene();
 	intro->Init(renderer);
 	intro->SetName("Intro");

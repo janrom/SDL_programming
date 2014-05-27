@@ -16,11 +16,16 @@ extern map<XMLError, string> g_TinyXmlErrors;
 void
 GameScene::Init(SDL_Renderer * renderer)
 {
-	bookCover = IMG_LoadTexture(renderer, "res/cover.png");
+	bookCover = IMG_LoadTexture(renderer, "res/pages/cover.png");
 	if (bookCover == NULL) throw std::runtime_error(IMG_GetError());
 
-	bookPages = IMG_LoadTexture(renderer, "res/pages.png");
-	if (bookPages == NULL) throw std::runtime_error(IMG_GetError());
+	for (int i = 0; i < NUM_PAGE_ANIM_FRAMES; i++)
+	{
+		ostringstream oss;
+		oss << "res/pages/page0" << i + 1 << ".png";
+		bookPages[i] = IMG_LoadTexture(renderer, oss.str().c_str());
+		if (bookPages[i] == NULL) throw std::runtime_error(IMG_GetError());
+	}	
 
 	playerTexture = IMG_LoadTexture(renderer, "res/Player0.png");
 	if (playerTexture == NULL) throw std::runtime_error(IMG_GetError());
@@ -35,19 +40,11 @@ GameScene::Init(SDL_Renderer * renderer)
 	// FUNCTION KEEP CALLING ITSELF INFINITELY CREATING A NEW WINDOW EVERYTIME
 	//SDL_GetWindowSize(Game::GetInstance()->GetWindow(), &playerRect.x, &playerRect.y);
 	// place player at center of the screen
-	playerRect.x = 640 / 2;
-	playerRect.y = 480 / 2;
+	playerRect.x = 480 - playerWidth;
+	playerRect.y = 240 - playerHeight;
 	playerRect.w = playerWidth * 2;
 	playerRect.h = playerHeight * 2;
-	
-	// declare a "page" where to put text
-	page = new Page();
-	page->fillMode_ = FillMode::Tail;
-	page->_justification = Justification::Left;
-	page->Init(renderer, 412, 612);
-	*page << "Hello there";
-	page->SetDirty(true);
-
+			
 	// load fonts
 	XMLDocument fontDoc;
 	fontDoc.LoadFile("res/fonts/fonts.xml");
@@ -84,53 +81,101 @@ GameScene::Init(SDL_Renderer * renderer)
 
 		pElement = pElement->NextSiblingElement("Font");
 	}
+
+	// declare a basic page where to put text
+	page = new Page();
+	page->fillMode_ = FillMode::Tail;
+	page->_justification = Justification::Left;
+	page->Init(renderer, 412, 612);
+	page->SetDirty(true);
+
+	titlePage = new Page();
+	titlePage->fillMode_ = FillMode::Head;
+	titlePage->_justification = Justification::Center;
+	titlePage->Init(renderer, 412, 612);
+	*titlePage << "Quick Escape by Janne Romppanen";
+	titlePage->SetDirty(true);
+
+	endPage = new Page();
+	endPage->fillMode_ = FillMode::Head;
+	endPage->_justification = Justification::Center;
+	endPage->Init(renderer, 412, 612);
+	*endPage << "The End";
+	endPage->SetDirty(true);
+
+	// default size for a text area
+	textSrc.x = 0;
+	textSrc.y = 0;
+	textSrc.w = 979;
+	textSrc.h = 626;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 GameScene::~GameScene()
 {
 	SDL_DestroyTexture(bookCover);
-	SDL_DestroyTexture(bookPages);
+	for (auto & e : bookPages)
+	{
+		SDL_DestroyTexture(e);
+	}	
 	SDL_DestroyTexture(playerTexture);	
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 void
 GameScene::Render(SDL_Renderer * renderer)
 {
-	if (bookCoverDisplayed == false)
-	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, bookCover, NULL, NULL);
-		SDL_RenderPresent(renderer);
-		SDL_Delay(1000);
-		bookCoverDisplayed = true;		
-	}
-	else
-	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, bookPages, NULL, NULL);
-		SDL_RenderCopy(renderer, playerTexture, NULL, &playerRect);		
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, bookCover, NULL, NULL);
+	SDL_Rect pageDest{ 20, 40, 600, 400 };
+	// render one page at bottom so when turning the page it doesn't look just single page
+	SDL_RenderCopy(renderer, bookPages[0], NULL, &pageDest);
+	SDL_RenderCopy(renderer, bookPages[(int)pageFrame], NULL, &pageDest);
 		
-		if (page->IsDirty())
-		{
-			page->Compose(fonts["text"]);
-			page->RenderContent(renderer);
-			page->SetDirty(false);
-		}
-		SDL_Rect d = { 50, 50, 320, 400 };
-		SDL_RenderCopy(renderer, page->_pageTexture, NULL, &d);
-		
-		if (fading)
-		{
-			// cover whole window with white color
-			int width = 0, height = 0;
-			SDL_GetWindowSize(Game::GetInstance()->GetWindow(), &width, &height);
-			boxRGBA(renderer, 0, 0, width, height, 255, 255, 255, (int)alpha);
-		}		
+	if (titlePage->IsDirty())
+	{
+		titlePage->Compose(fonts["title"]);
+		titlePage->RenderContent(renderer);
+		titlePage->SetDirty(false);
 	}
+	if (page->IsDirty())
+	{
+		page->Compose(fonts["text"]);
+		page->RenderContent(renderer);
+		page->SetDirty(false);
+	}
+	if (endPage->IsDirty())
+	{
+		endPage->Compose(fonts["special"]);
+		endPage->RenderContent(renderer);
+		endPage->SetDirty(false);
+	}
+	if (pageIndex == 0)
+	{
+		SDL_Rect textArea = { 40, 180, 270, 600 };
+		SDL_RenderCopy(renderer, titlePage->_pageTexture, &textSrc, &textArea);
+	}
+	else if (pageIndex == 1)
+	{
+		SDL_Rect textArea = { 40, 50, 270, 400 };
+		SDL_RenderCopy(renderer, page->_pageTexture, &textSrc, &textArea);
+		SDL_RenderCopy(renderer, playerTexture, NULL, &playerRect);
+	}
+	else if (pageIndex == 2)
+	{
+		SDL_Rect textArea = { 0, 200, 300, 600 };
+		SDL_RenderCopy(renderer, endPage->_pageTexture, &textSrc, &textArea);
+	}	
+	
+	if (fading)
+	{
+		// cover whole window with white color
+		int width = 0, height = 0;
+		SDL_GetWindowSize(Game::GetInstance()->GetWindow(), &width, &height);
+		boxRGBA(renderer, 0, 0, width, height, 255, 255, 255, (int)alpha);
+	}		
+	
 }
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // use this to show rendered texture for certain time
 void
 GameScene::Update(float seconds)
@@ -141,11 +186,62 @@ GameScene::Update(float seconds)
 		alpha -= seconds * ALPHA_VALUE_STEP;
 		if (alpha < 0.001f) fading = false;
 	}
+	if (nextPageTurning)
+	{
+		pageFrame += seconds * 3.0f;
+		textSrc.w -= seconds * 5000.0f;
+		if (pageFrame > 5.0f)
+		{
+			textSrc.w = TEXT_MAX_WIDTH;
+			nextPageTurning = false;
+			pageFrame = 0.0f;
+			pageIndex++;
+		}			
+	}
+
+	if (previousPageTurning)
+	{
+		pageFrame -= seconds * 3.0f;
+		textSrc.w -= seconds * 5000.0f;
+		if (pageFrame < 1.0f)
+		{
+			textSrc.w = TEXT_MAX_WIDTH;
+			previousPageTurning = false;
+			pageFrame = 0.0f;
+			pageIndex--;
+		}		
+	}
+
+	// start playing background music if there is no music
+	// this is a hack for SDL_mixer lib which can't handle multiple mp3's
+	// use SDL_sound for better handling
+	if (Mix_PlayingMusic() == 0)
+		Mix_PlayMusic(Game::GetInstance()->music["background"], -1);
 }
 ////////////////////////////////////////////////////////////////////////////////
 void
 GameScene::OnEvent(SDL_Event & ev)
 {
+	if (ev.type == SDL_KEYDOWN)
+	{
+		if (ev.key.keysym.sym == SDLK_SPACE)
+		{
+			if (Mix_PlayMusic(Game::GetInstance()->music["page"], 1) == -1) 
+			{
+				printf("Mix_PlayMusic: %s\n", Mix_GetError());				
+			}
+			nextPageTurning = true;
+		}
+		if (ev.key.keysym.sym == SDLK_LCTRL)
+		{
+			if (Mix_PlayMusic(Game::GetInstance()->music["page"], 1) == -1) 
+			{
+				printf("Mix_PlayMusic: %s\n", Mix_GetError());
+			}
+			pageFrame = 6.0f;
+			previousPageTurning = true;
+		}
+	}
 	Command *pCmd = CommandUtils::Parse(ev);
 	pCmd->Execute(*this);
 	delete pCmd;	

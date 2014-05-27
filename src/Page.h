@@ -46,8 +46,8 @@ public:
 	//using std::runtime_error::runtime_error;
 };
 ////////////////////////////////////////////////////////////////////////////////
-const size_t DEFAULT_PAGE_TEXTURE_WIDTH = 512;
-const size_t DEFAULT_PAGE_TEXTURE_HEIGHT = 1024;
+const size_t DEFAULT_PAGE_TEXTURE_WIDTH = 640;
+const size_t DEFAULT_PAGE_TEXTURE_HEIGHT = 480;
 ////////////////////////////////////////////////////////////////////////////////
 class Page : public std::stringstream
 {

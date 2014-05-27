@@ -3,27 +3,36 @@
 
 #include "SDL.h"
 #include "SDL_ttf.h"
+#include "SDL_mixer.h"
 #include "Scene.h"
 #include "Page.h"
 #include "Commands.h"
 #include <map>
 #include <string>
-
+const int NUM_PAGE_ANIM_FRAMES = 6;
+const int TEXT_MAX_WIDTH = 979;
 class GameScene :	public Scene,
 					public NOPCommandHandler
 {
 protected:
 	SDL_Texture *	bookCover{ NULL };
-	SDL_Texture *	bookPages{ NULL };
+	SDL_Texture *	bookPages[NUM_PAGE_ANIM_FRAMES];
 	SDL_Texture *	playerTexture{ NULL };
 	SDL_Rect		playerRect;
+	SDL_Rect		textSrc;
 	float			alpha{ 255.0f };
+	float			pageFrame{ 0 };
+	int				pageIndex{ 0 };
 	bool			fading{ true };
 	bool			bookCoverDisplayed{ false };
-	std::map<std::string, TTF_Font *> fonts;
+	bool			nextPageTurning{ false };
+	bool			previousPageTurning{ false };
+	std::map<std::string, TTF_Font *> fonts;	
 
 public:
 	Page *			page{ NULL };
+	Page *			titlePage{ NULL };
+	Page *			endPage{ NULL };
 	virtual void Init(SDL_Renderer * renderer);
 	virtual ~GameScene();
 	virtual void Update(float seconds);
